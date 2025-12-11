@@ -48,13 +48,3 @@ Este proyecto ha sido desarrollado siguiendo estrictamente los lineamientos de l
 * **Sensores Integrados:**
     1.  **Sensor de Luz Ambiental:** Es el sensor principal, utilizado para leer el nivel de Lux actual del entorno y generar recomendaciones.
     2.  **Cámara:** Se utiliza para permitir al usuario asignar una fotografía real a cada planta registrada.
-
----
-
-## Instalación y Releases
-
-El ejecutable firmado (`.apk`) se encuentra disponible en la sección de **Releases** de este repositorio.
-
-1.  Ve a la sección "Releases" (o haz clic [aquí](**LINK_A_LA_SECCIÓN_RELEASES_DE_TU_REPO**)).
-2.  Descarga el archivo `.apk` de la última versión.
-3.  Instálalo en tu dispositivo Android (recuerda que podrías necesitar permitir la instalación de orígenes desconocidos).
