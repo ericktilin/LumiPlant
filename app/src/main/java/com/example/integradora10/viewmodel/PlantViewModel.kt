@@ -27,21 +27,16 @@ class PlantViewModel : ViewModel() {
     // Cargar plantas (GET)
     fun loadPlants() {
         viewModelScope.launch {
-            isLoading = true // Inicia la carga
+            isLoading = true
             try {
-                // PASO CLAVE: Forzamos la lista a vacía para garantizar el redibujado
-                plants = emptyList()
-
-                // Recibimos los datos de la API
-                val loadedPlants = repository.getPlants()
-                plants = loadedPlants
-
-                // Al finalizar exitosamente, incrementamos la clave para refrescar la UI
+                // **PASO CLAVE FINAL:** Asignamos la nueva lista como una copia
+                // Esto asegura que la referencia del objeto [Plant] ha cambiado.
+                plants = repository.getPlants().toList() // Usamos .toList() para crear una nueva referencia.
                 refreshKey++
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
-                isLoading = false // ¡Asegura que el estado de carga siempre termina!
+                isLoading = false
             }
         }
     }
