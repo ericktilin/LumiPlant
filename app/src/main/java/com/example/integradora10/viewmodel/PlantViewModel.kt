@@ -7,12 +7,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.integradora10.model.Plant
 import com.example.integradora10.repository.PlantRepository
-import com.example.integradora10.network.RetrofitClient // Asegúrate de que esta importación sea correcta
+import com.example.integradora10.network.RetrofitClient
 import kotlinx.coroutines.launch
+import retrofit2.HttpException // Necesaria para el manejo de errores específicos de la API
 
 /**
- * [V1] ViewModel base: Solo incluye la carga de datos inicial y la gestión del estado de carga.
- * Las funciones CRUD (POST, PUT, DELETE) y la lógica de corrección se añadirán después.
+ * [V2] ViewModel final con todas las funcionalidades CRUD, manejo de estados
+ * y correcciones para el borrado instantáneo en Jetpack Compose.
  */
 class PlantViewModel : ViewModel() {
 
@@ -23,30 +24,94 @@ class PlantViewModel : ViewModel() {
     var isLoading by mutableStateOf(false)
     var currentLight by mutableStateOf(0f)
 
-    // CLAVE DE REFRESCO y funciones CRUD omitidas en la V1
-    // var refreshKey by mutableStateOf(0)
+    // CLAVE DE REFRESCO: Se incrementa para forzar el redibujado del LazyColumn
+    var refreshKey by mutableStateOf(0)
 
     /**
      * Carga la lista de plantas del repositorio (GET).
-     * Esta es la funcionalidad mínima requerida.
+     * Incluye la corrección .toList() y refreshKey para garantizar el refresco de Compose.
      */
     fun loadPlants() {
         viewModelScope.launch {
             isLoading = true
             try {
-                plants = repository.getPlants()
+                // **CORRECCIÓN CLAVE:** Usamos .toList() para forzar una nueva referencia de objeto.
+                plants = repository.getPlants().toList()
+                refreshKey++
             } catch (e: Exception) {
                 e.printStackTrace()
-                // En caso de error, la lista queda vacía.
             } finally {
                 isLoading = false
             }
         }
     }
 
-    // Función de actualización de luz (sensor), también esencial.
+    /**
+     * Borra una planta específica (DELETE) y llama a loadPlants() para recargar la lista.
+     */
+    fun deletePlant(id: Int) {
+        viewModelScope.launch {
+            try {
+                repository.removePlant(id)
+                // Llama a loadPlants() para la eliminación instantánea.
+                loadPlants()
+            } catch (e: HttpException) {
+                e.printStackTrace()
+                println("ERROR API AL ELIMINAR: Código ${e.code()}")
+            }
+            catch (e: Exception) {
+                e.printStackTrace()
+                println("ERROR GENERAL AL ELIMINAR: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Crea una nueva planta (POST) y recarga la lista.
+     */
+    fun createNewPlant(name: String, type: String, reqLux: Float, imageUrl: String?) {
+        viewModelScope.launch {
+            try {
+                val newPlant = Plant(
+                    name = name,
+                    type = type,
+                    requiredLux = reqLux,
+                    currentLux = 0f,
+                    imageUrl = imageUrl
+                )
+                repository.addPlant(newPlant)
+                loadPlants()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /**
+     * Actualiza una planta existente (PUT) y recarga la lista.
+     */
+    fun updatePlant(plant: Plant) {
+        viewModelScope.launch {
+            try {
+                repository.updatePlant(plant)
+                loadPlants()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    /**
+     * Actualiza el estado de la luz actual (Sensor).
+     */
     fun updateLight(lux: Float) {
         currentLight = lux
     }
 
+    /**
+     * Busca una planta por su ID en la lista.
+     */
+    fun getPlantById(id: Int): Plant? {
+        return plants.find { it.id == id }
     }
+}
