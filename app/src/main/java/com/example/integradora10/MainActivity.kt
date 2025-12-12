@@ -1,76 +1,64 @@
 package com.example.integradora10
 
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.*
-import com.example.integradora10.ui.AddPlantScreen
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.integradora10.ui.PlantListScreen
+import com.example.integradora10.ui.theme.Integradora10Theme
 import com.example.integradora10.viewmodel.PlantViewModel
 
-class MainActivity : ComponentActivity(), SensorEventListener {
-    private val plantViewModel: PlantViewModel by viewModels()
-    private lateinit var sensorManager: SensorManager
-    private var lightSensor: Sensor? = null
+/**
+ * [INICIAL] Actividad Principal sin funcionalidad de sensores ni navegación completa.
+ * Solo configura el entorno de Jetpack Compose.
+ */
+class MainActivity : ComponentActivity() { // NO hereda de SensorEventListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT)
+        // No hay inicialización de sensores.
 
         setContent {
-            MaterialTheme {
-                // CAMBIO CLAVE: Usamos un Int? para guardar el ID de la planta a editar.
-                // Si es null, estamos agregando. Si es Int, estamos editando ese ID.
-                var plantIdToEdit by remember { mutableStateOf<Int?>(null) }
-                // Estado de navegación simple
-                if (plantIdToEdit == null) {
-
-                    // Manejamos dos acciones desde PlantListScreen:
-                    PlantListScreen(
-                        viewModel = plantViewModel,
-                        // 1. Navegar a AGREGAR (pasamos null)
-                        onNavigateToAdd = { plantIdToEdit = 0 }, // Usamos 0 o cualquier Int no nulo para entrar en modo 'Add'
-                        // 2. Navegar a EDITAR (pasamos el ID)
-                        onNavigateToEdit = { id -> plantIdToEdit = id } // Nueva función para editar
-                    )
-                } else {
-                    // Si plantIdToEdit NO es null, vamos a la pantalla de Agregar/Editar
-                    AddPlantScreen(
-                        viewModel = plantViewModel,
-                        plantIdToEdit = plantIdToEdit!!, // <-- Pasamos el ID a editar
-                        onNavigateBack = { plantIdToEdit = null }
-                    )
+            Integradora10Theme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    // Llama a la composición principal.
+                    PlantAppContent()
                 }
             }
         }
     }
 
-    override fun onSensorChanged(event: SensorEvent?) {
-        if (event?.sensor?.type == Sensor.TYPE_LIGHT) {
-            val lux = event.values[0]
-            plantViewModel.updateLight(lux)
+    /**
+     * Contenido Mínimo de la aplicación, solo con la pantalla de lista.
+     * La lógica de navegación de edición/agregar se omite para este commit.
+     */
+    @Composable
+    fun PlantAppContent() {
+        val navController = rememberNavController()
+        val plantViewModel: PlantViewModel = viewModel()
+
+        // Configuración de NavHost con la ruta principal.
+        NavHost(navController = navController, startDestination = "plantList") {
+            composable("plantList") {
+                PlantListScreen(
+                    viewModel = plantViewModel,
+                    // Las funciones de navegación no hacen nada por ahora.
+                    onNavigateToAdd = { /* TODO */ },
+                    onNavigateToEdit = { /* TODO */ }
+                )
+            }
+            // Las otras rutas composables (addPlant) se omiten.
         }
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
-
-    override fun onResume() {
-        super.onResume()
-        lightSensor?.let {
-            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
-        }
-    }
-
-    override fun onPause() {
-        super.onPause()
-        sensorManager.unregisterListener(this)
     }
 }
