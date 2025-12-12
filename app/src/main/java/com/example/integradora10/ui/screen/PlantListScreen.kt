@@ -27,7 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.draw.clip
 
 // ----------------------------------------------------------------------------------
-// FUNCIÓN DE UTILIDAD: Determina el color de estado basado en Lux (SE MANTIENE, aunque no se usa el círculo)
+// FUNCIÓN DE UTILIDAD: Determina el color de estado basado en Lux
 // ----------------------------------------------------------------------------------
 private fun getLuxStatusColor(required: Float, current: Float): Color {
     val tolerance = required * 0.15f
@@ -171,7 +171,9 @@ fun PlantListScreen(viewModel: PlantViewModel, onNavigateToAdd: () -> Unit, onNa
                                             Text(text = "Tipo: ${plant.type}", style = MaterialTheme.typography.bodyMedium)
                                         }
 
-                                        // 3. (OPCIONAL) INDICADOR DE LUX REQUERIDA (Muestra el Lux Requerido como texto simple)
+                                        Spacer(Modifier.width(8.dp))
+
+                                        // 3. INDICADOR DE LUX REQUERIDA (Muestra el Lux Requerido como texto simple)
                                         Column(horizontalAlignment = Alignment.End) {
                                             Text(
                                                 text = "${plant.requiredLux.toInt()} Lux",
@@ -179,11 +181,10 @@ fun PlantListScreen(viewModel: PlantViewModel, onNavigateToAdd: () -> Unit, onNa
                                                 color = MaterialTheme.colorScheme.primary
                                             )
                                             Text(
-                                                text = "Requerido",
+                                                text = "Req.",
                                                 style = MaterialTheme.typography.labelSmall
                                             )
                                         }
-
                                     }
                                 }
                             }
@@ -201,6 +202,7 @@ fun PlantListScreen(viewModel: PlantViewModel, onNavigateToAdd: () -> Unit, onNa
                 // Al tocar fuera, se cancela el borrado y se recarga la lista para resetear el swipe
                 showDeleteDialog = false
                 plantToDelete = null
+                // LLAMADA NECESARIA si el usuario CANCELA el Swipe para resetear la tarjeta deslizada
                 coroutineScope.launch {
                     viewModel.loadPlants()
                 }
@@ -210,8 +212,13 @@ fun PlantListScreen(viewModel: PlantViewModel, onNavigateToAdd: () -> Unit, onNa
             confirmButton = {
                 Button(
                     onClick = {
-                        // ACCIÓN FINAL DE BORRADO
-                        plantToDelete!!.id.let { id -> viewModel.deletePlant(id) }
+                        // 1. LLAMADA AL VIEWMODEL
+                        plantToDelete!!.id.let { id ->
+                            // Esta función ahora se encarga de borrar y luego de llamar a loadPlants()
+                            viewModel.deletePlant(id)
+                        }
+
+                        // 2. CERRAR EL DIÁLOGO (¡No se necesita coroutineScope.launch aquí!)
                         showDeleteDialog = false
                         plantToDelete = null
                     }
@@ -224,6 +231,7 @@ fun PlantListScreen(viewModel: PlantViewModel, onNavigateToAdd: () -> Unit, onNa
                     onClick = {
                         showDeleteDialog = false
                         plantToDelete = null
+                        // LLAMADA NECESARIA si el usuario CANCELA el Swipe para resetear la tarjeta deslizada
                         coroutineScope.launch {
                             viewModel.loadPlants()
                         }
